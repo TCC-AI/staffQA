@@ -293,6 +293,50 @@
                 align-items: center;
             }
         }
+                .reset-section {
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+        }
+        
+        .reset-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        }
+        
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+        
+        .reset-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 手機版樣式調整 */
+        @media (max-width: 768px) {
+            .reset-btn {
+                width: 100%;
+                padding: 15px;
+                font-size: 16px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -314,6 +358,10 @@
                 </div>
                 
                 <div class="char-counter" id="charCounter">0 / 500</div>
+                            <!-- 🆕 加入重置按鈕 -->
+                <div class="reset-section">
+                    <button class="reset-btn" id="resetBtn">🔄 重置</button>
+                </div>
                 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
@@ -628,6 +676,60 @@
                 rateLimitWarning.style.display = 'none';
             }
         }, 10000); // 每10秒清理一次
+
+        // DOM 元素 - 在現有的 DOM 元素宣告後加入
+const resetBtn = document.getElementById('resetBtn');
+
+// 🆕 重置功能
+function resetSystem() {
+    // 清空輸入框
+    searchInput.value = '';
+    
+    // 重置字元計數器
+    updateCharCounter();
+    
+    // 隱藏所有訊息和結果
+    hideMessages();
+    hideResult();
+    
+    // 移除錯誤樣式
+    searchInput.classList.remove('error');
+    
+    // 重置反饋按鈕
+    const feedbackButtons = document.querySelectorAll('.feedback-btn');
+    feedbackButtons.forEach(btn => btn.classList.remove('selected'));
+    
+    // 隱藏載入狀態
+    showLoading(false);
+    
+    // 啟用搜尋按鈕
+    searchBtn.disabled = false;
+    
+    // 清除上次查詢記錄
+    lastQuery = '';
+    
+    // 聚焦到輸入框
+    searchInput.focus();
+    
+    // 顯示成功訊息
+    showSuccess('✅ 系統已重置，可以重新開始查詢');
+    
+    console.log('系統已重置');
+}
+
+// 🆕 重置按鈕事件監聽器 - 在現有事件監聽器後加入
+resetBtn.addEventListener('click', () => {
+    resetSystem();
+});
+
+// 🆕 鍵盤快捷鍵支援 (Ctrl+R 或 Cmd+R)
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault(); // 防止瀏覽器重新載入
+        resetSystem();
+    }
+});
+
     </script>
 </body>
 </html>
