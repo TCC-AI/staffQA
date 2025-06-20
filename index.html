@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>物流客服應對系統</title>
+    <title>【昶青物流】客服應對系統</title>
     <style>
         * {
             margin: 0;
@@ -95,6 +95,11 @@
             transform: translateY(-50%) scale(1.05);
         }
 
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -137,19 +142,7 @@
             line-height: 1.8;
             color: #555;
             font-size: 16px;
-        }
-
-        .result-content h3 {
-            color: #333;
-            margin: 20px 0 10px 0;
-        }
-
-        .result-content ul {
-            margin: 10px 0 10px 20px;
-        }
-
-        .result-content li {
-            margin: 5px 0;
+            white-space: pre-wrap;
         }
 
         .quick-questions {
@@ -263,8 +256,8 @@
     </div>
 
     <script>
-        // Google Apps Script 部署的 Web App URL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzhPfFvsIJGrVK71-kVNrPCVDFy0_MuAJYZG6_bLzMxTxhU9H7qc3-WdGT3UZ0fdcb_9Q/exec'; // 請替換為您的 GAS Web App URL
+        // 請替換為您的 Google Apps Script Web App URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxtU4FQ10e3z5zP19t64_Cul2GgxQaFXqzT04u7jjMIBGGcC1ngr4VMlZ2XOquY3votXg/exec';
 
         // DOM 元素
         const searchInput = document.getElementById('searchInput');
@@ -274,8 +267,8 @@
         const resultContent = document.getElementById('resultContent');
         const errorMessage = document.getElementById('errorMessage');
 
-        // 搜尋功能 (修正版)
-        async function performSearch(query) {
+        // 搜尋功能（使用 JSONP）
+        function performSearch(query) {
             if (!query.trim()) {
                 showError('請輸入問題或關鍵字');
                 return;
@@ -284,67 +277,49 @@
             showLoading(true);
             hideError();
             hideResult();
+            searchBtn.disabled = true;
 
-            try {
-                // 使用 Google Apps Script 的 URL 參數方式
-                const url = `${GAS_URL}?callback=handleResponse&action=search&query=${encodeURIComponent(query)}`;
+            // 使用 JSONP 避免 CORS 問題
+            const callbackName = 'jsonpCallback_' + Date.now();
+            const script = document.createElement('script');
+            const url = `${GAS_URL}?callback=${callbackName}&action=search&query=${encodeURIComponent(query)}&_=${Date.now()}`;
+            
+            // 設置超時
+            const timeout = setTimeout(() => {
+                cleanup();
+                showError('請求超時，請檢查網路連線或稍後再試');
+            }, 30000); // 30秒超時
+
+            // 全域回調函數
+            window[callbackName] = function(data) {
+                clearTimeout(timeout);
+                cleanup();
                 
-                // 創建 JSONP 請求
-                const script = document.createElement('script');
-                script.src = url;
-                
-                // 設置超時
-                const timeout = setTimeout(() => {
-                    document.head.removeChild(script);
-                    showError('請求超時，請稍後再試');
-                    showLoading(false);
-                }, 10000);
+                if (data && data.success) {
+                    showResult(data.answer);
+                } else {
+                    showError(data.error || '搜尋失敗，請稍後再試');
+                }
+            };
 
-                // 全域回調函數
-                window.handleResponse = function(data) {
-                    clearTimeout(timeout);
-                    document.head.removeChild(script);
-                    
-                    if (data && data.success) {
-                        showResult(data.answer);
-                    } else {
-                        showError(data.error || '搜尋失敗，請稍後再試');
-                    }
-                    showLoading(false);
-                };
+            // 錯誤處理
+            script.onerror = function() {
+                clearTimeout(timeout);
+                cleanup();
+                showError('載入失敗，請檢查網路連線');
+            };
 
-                document.head.appendChild(script);
-
-            } catch (error) {
-                console.error('搜尋錯誤:', error);
-                showError('系統暫時無法使用，請稍後再試');
+            function cleanup() {
                 showLoading(false);
+                searchBtn.disabled = false;
+                if (document.head.contains(script)) {
+                    document.head.removeChild(script);
+                }
+                delete window[callbackName];
             }
-        }
 
-        // 備用的 POST 請求方法
-        async function performSearchPOST(query) {
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // 添加這行
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'search',
-                        query: query
-                    })
-                });
-
-                // 由於 no-cors 模式，我們無法讀取回應
-                // 這裡需要使用其他方式處理
-                showResult('請求已送出，請稍後查看結果');
-                
-            } catch (error) {
-                console.error('搜尋錯誤:', error);
-                showError('系統暫時無法使用，請稍後再試');
-            }
+            script.src = url;
+            document.head.appendChild(script);
         }
 
         // 快速搜尋
@@ -360,7 +335,7 @@
 
         // 顯示結果
         function showResult(content) {
-            resultContent.innerHTML = formatContent(content);
+            resultContent.textContent = content;
             resultSection.style.display = 'block';
             resultSection.scrollIntoView({ behavior: 'smooth' });
         }
@@ -381,30 +356,13 @@
             errorMessage.style.display = 'none';
         }
 
-        // 格式化內容
-        function formatContent(content) {
-            // 將換行符轉換為 HTML
-            let formatted = content.replace(/\n/g, '<br>');
-            
-            // 處理編號列表
-            formatted = formatted.replace(/(\d+[\.:：])/g, '<strong>$1</strong>');
-            
-            // 處理特殊符號
-            formatted = formatted.replace(/[✅❌👉📌]/g, '<span style="font-size: 1.2em;">$&</span>');
-            
-            // 處理粗體文字（用 ** 包圍的文字）
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            
-            return formatted;
-        }
-
         // 事件監聽器
         searchBtn.addEventListener('click', () => {
             performSearch(searchInput.value);
         });
 
         searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !searchBtn.disabled) {
                 performSearch(searchInput.value);
             }
         });
