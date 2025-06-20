@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【昶青物流】物流客服應對系統</title>
+    <title>物流客服應對系統</title>
     <style>
         * {
             margin: 0;
@@ -225,7 +225,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚚【昶青物流】 客服應對系統</h1>
+            <h1>🚚 【昶青物流】客服應對系統</h1>
             <p>輸入關鍵字，快速找到標準應對流程</p>
         </div>
 
@@ -264,7 +264,7 @@
 
     <script>
         // Google Apps Script 部署的 Web App URL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwgSlWIVdi0544es-V7LblqnCd4kvibylDHFQA2x5EuQrWXWCr_gR113ec3F83D1dG3/exec'; // 請替換為您的 GAS Web App URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzhPfFvsIJGrVK71-kVNrPCVDFy0_MuAJYZG6_bLzMxTxhU9H7qc3-WdGT3UZ0fdcb_9Q/exec'; // 請替換為您的 GAS Web App URL
 
         // DOM 元素
         const searchInput = document.getElementById('searchInput');
@@ -274,7 +274,7 @@
         const resultContent = document.getElementById('resultContent');
         const errorMessage = document.getElementById('errorMessage');
 
-        // 搜尋功能
+        // 搜尋功能 (修正版)
         async function performSearch(query) {
             if (!query.trim()) {
                 showError('請輸入問題或關鍵字');
@@ -286,8 +286,48 @@
             hideResult();
 
             try {
+                // 使用 Google Apps Script 的 URL 參數方式
+                const url = `${GAS_URL}?callback=handleResponse&action=search&query=${encodeURIComponent(query)}`;
+                
+                // 創建 JSONP 請求
+                const script = document.createElement('script');
+                script.src = url;
+                
+                // 設置超時
+                const timeout = setTimeout(() => {
+                    document.head.removeChild(script);
+                    showError('請求超時，請稍後再試');
+                    showLoading(false);
+                }, 10000);
+
+                // 全域回調函數
+                window.handleResponse = function(data) {
+                    clearTimeout(timeout);
+                    document.head.removeChild(script);
+                    
+                    if (data && data.success) {
+                        showResult(data.answer);
+                    } else {
+                        showError(data.error || '搜尋失敗，請稍後再試');
+                    }
+                    showLoading(false);
+                };
+
+                document.head.appendChild(script);
+
+            } catch (error) {
+                console.error('搜尋錯誤:', error);
+                showError('系統暫時無法使用，請稍後再試');
+                showLoading(false);
+            }
+        }
+
+        // 備用的 POST 請求方法
+        async function performSearchPOST(query) {
+            try {
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
+                    mode: 'no-cors', // 添加這行
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -297,22 +337,13 @@
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('網路請求失敗');
-                }
-
-                const data = await response.json();
+                // 由於 no-cors 模式，我們無法讀取回應
+                // 這裡需要使用其他方式處理
+                showResult('請求已送出，請稍後查看結果');
                 
-                if (data.success) {
-                    showResult(data.answer);
-                } else {
-                    showError(data.error || '搜尋失敗，請稍後再試');
-                }
             } catch (error) {
                 console.error('搜尋錯誤:', error);
                 showError('系統暫時無法使用，請稍後再試');
-            } finally {
-                showLoading(false);
             }
         }
 
