@@ -73,6 +73,11 @@
             box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
         }
 
+        .search-input.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+
         .search-btn {
             position: absolute;
             right: 5px;
@@ -91,13 +96,28 @@
             justify-content: center;
         }
 
-        .search-btn:hover {
+        .search-btn:hover:not(:disabled) {
             transform: translateY(-50%) scale(1.05);
         }
 
         .search-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .char-counter.warning {
+            color: #e67e22;
+        }
+
+        .char-counter.error {
+            color: #e74c3c;
         }
 
         .loading {
@@ -128,6 +148,7 @@
             border-radius: 15px;
             padding: 30px;
             margin-top: 30px;
+            position: relative;
         }
 
         .result-title {
@@ -143,6 +164,40 @@
             color: #555;
             font-size: 16px;
             white-space: pre-wrap;
+        }
+
+        .feedback-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .feedback-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .feedback-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .feedback-btn.selected {
+            background: #4facfe;
+            color: white;
+            border-color: #4facfe;
         }
 
         .quick-questions {
@@ -187,6 +242,26 @@
             border-left: 4px solid #d63031;
         }
 
+        .success-message {
+            display: none;
+            background: #e8f5e8;
+            color: #27ae60;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .rate-limit-warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -212,6 +287,11 @@
             .question-tag {
                 text-align: center;
             }
+
+            .feedback-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -224,10 +304,16 @@
 
         <div class="main-content">
             <div class="search-section">
+                <div class="rate-limit-warning" id="rateLimitWarning" style="display: none;">
+                    ⚠️ 為了確保服務品質，每分鐘最多可查詢10次
+                </div>
+
                 <div class="search-box">
-                    <input type="text" class="search-input" placeholder="請輸入客戶問題或關鍵字..." id="searchInput">
+                    <input type="text" class="search-input" placeholder="請輸入客戶問題或關鍵字..." id="searchInput" maxlength="500">
                     <button class="search-btn" id="searchBtn">🔍</button>
                 </div>
+                
+                <div class="char-counter" id="charCounter">0 / 500</div>
                 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
@@ -235,11 +321,21 @@
                 </div>
 
                 <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
             </div>
 
             <div class="result-section" id="resultSection">
                 <h2 class="result-title">📋 建議應對方式</h2>
                 <div class="result-content" id="resultContent"></div>
+                
+                <div class="feedback-section">
+                    <p style="color: #666; font-size: 14px;">這個回答對您有幫助嗎？</p>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn" onclick="submitFeedback('helpful')">👍 有幫助</button>
+                        <button class="feedback-btn" onclick="submitFeedback('not-helpful')">👎 沒幫助</button>
+                        <button class="feedback-btn" onclick="submitFeedback('needs-improvement')">📝 需改進</button>
+                    </div>
+                </div>
             </div>
 
             <div class="quick-questions">
@@ -250,14 +346,20 @@
                     <button class="question-tag" onclick="quickSearch('時間壓力配送')">緊急配送需求</button>
                     <button class="question-tag" onclick="quickSearch('送達數量不符')">數量不符處理</button>
                     <button class="question-tag" onclick="quickSearch('配送延遲')">配送延遲處理</button>
+                    <button class="question-tag" onclick="quickSearch('客戶投訴')">客戶投訴處理</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 請替換為您的 Google Apps Script Web App URL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxlGGmDEgWgJXaomHotFQkNabUvM7oDp6syOkSpc3A-1OQP44r5NdxWDYRtNxy55nnu1Q/exec';
+        // 配置設定
+        const CONFIG = {
+            GAS_URL: 'https://script.google.com/macros/s/AKfycbz-PdHiSx0L4Ba7UQParmUYcU_KBZUbP_5AjHYXmSgq_KsE5E91HlAVQKpy2lwX1_KLjg/exec',
+            MAX_CHARS: 500,
+            SEARCH_TIMEOUT: 20000, // 20秒
+            RATE_LIMIT_WARNING_THRESHOLD: 8 // 達到8次時顯示警告
+        };
 
         // DOM 元素
         const searchInput = document.getElementById('searchInput');
@@ -266,29 +368,98 @@
         const resultSection = document.getElementById('resultSection');
         const resultContent = document.getElementById('resultContent');
         const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const charCounter = document.getElementById('charCounter');
+        const rateLimitWarning = document.getElementById('rateLimitWarning');
 
-        // 搜尋功能（使用 JSONP）
-        function performSearch(query) {
+        // 全域變數
+        let searchCount = 0;
+        let lastQuery = '';
+
+        // 輸入驗證
+        function validateInput(query) {
             if (!query.trim()) {
-                showError('請輸入問題或關鍵字');
+                return '請輸入問題或關鍵字';
+            }
+            
+            if (query.length > CONFIG.MAX_CHARS) {
+                return `輸入內容過長，請控制在${CONFIG.MAX_CHARS}字以內`;
+            }
+            
+            // 檢查是否包含惡意內容
+            const maliciousPatterns = [
+                /<script/i,
+                /javascript:/i,
+                /on\w+\s*=/i
+            ];
+            
+            if (maliciousPatterns.some(pattern => pattern.test(query))) {
+                return '輸入內容包含不允許的字符';
+            }
+            
+            return null;
+        }
+
+        // 頻率限制檢查
+        function checkRateLimit() {
+            const now = Date.now();
+            const oneMinuteAgo = now - 60000;
+            
+            // 從 localStorage 獲取搜尋記錄
+            const searches = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+            const recentSearches = searches.filter(time => time > oneMinuteAgo);
+            
+            // 更新記錄
+            recentSearches.push(now);
+            localStorage.setItem('searchHistory', JSON.stringify(recentSearches));
+            
+            // 顯示警告
+            if (recentSearches.length >= CONFIG.RATE_LIMIT_WARNING_THRESHOLD) {
+                rateLimitWarning.style.display = 'block';
+            }
+            
+            return recentSearches.length <= 10;
+        }
+
+        // 搜尋功能
+        function performSearch(query) {
+            // 輸入驗證
+            const validationError = validateInput(query);
+            if (validationError) {
+                showError(validationError);
+                searchInput.classList.add('error');
+                return;
+            }
+
+            // 頻率限制檢查
+            if (!checkRateLimit()) {
+                showError('請求過於頻繁，請稍後再試（每分鐘最多10次查詢）');
+                return;
+            }
+
+            // 避免重複搜尋
+            if (query.trim() === lastQuery) {
+                showError('請勿重複搜尋相同內容');
                 return;
             }
 
             showLoading(true);
-            hideError();
+            hideMessages();
             hideResult();
             searchBtn.disabled = true;
+            searchInput.classList.remove('error');
+            lastQuery = query.trim();
 
             // 使用 JSONP 避免 CORS 問題
-            const callbackName = 'jsonpCallback_' + Date.now();
+            const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const script = document.createElement('script');
-            const url = `${GAS_URL}?callback=${callbackName}&action=search&query=${encodeURIComponent(query)}&_=${Date.now()}`;
+            const url = `${CONFIG.GAS_URL}?callback=${callbackName}&action=search&query=${encodeURIComponent(query)}&timestamp=${Date.now()}`;
             
             // 設置超時
             const timeout = setTimeout(() => {
                 cleanup();
                 showError('請求超時，請檢查網路連線或稍後再試');
-            }, 30000); // 30秒超時
+            }, CONFIG.SEARCH_TIMEOUT);
 
             // 全域回調函數
             window[callbackName] = function(data) {
@@ -296,7 +467,8 @@
                 cleanup();
                 
                 if (data && data.success) {
-                    showResult(data.answer);
+                    showResult(data.answer, data.cached);
+                    searchCount++;
                 } else {
                     showError(data.error || '搜尋失敗，請稍後再試');
                 }
@@ -306,7 +478,7 @@
             script.onerror = function() {
                 clearTimeout(timeout);
                 cleanup();
-                showError('載入失敗，請檢查網路連線');
+                showError('網路連線失敗，請檢查您的網路狀態');
             };
 
             function cleanup() {
@@ -328,32 +500,82 @@
             performSearch(keyword);
         }
 
-        // 顯示載入狀態
+        // 提交反饋
+        function submitFeedback(type) {
+            const buttons = document.querySelectorAll('.feedback-btn');
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            
+            event.target.classList.add('selected');
+            
+            // 發送反饋到後端
+            const callbackName = 'feedbackCallback_' + Date.now();
+            const script = document.createElement('script');
+            
+            window[callbackName] = function(data) {
+                if (data.success) {
+                    showSuccess('感謝您的反饋！');
+                }
+                document.head.removeChild(script);
+                delete window[callbackName];
+            };
+            
+            script.src = `${CONFIG.GAS_URL}?callback=${callbackName}&action=feedback&type=${type}&query=${encodeURIComponent(lastQuery)}`;
+            document.head.appendChild(script);
+        }
+
+        // UI 控制函數
         function showLoading(show) {
             loading.style.display = show ? 'block' : 'none';
         }
 
-        // 顯示結果
-        function showResult(content) {
+        function showResult(content, cached = false) {
             resultContent.textContent = content;
+            if (cached) {
+                resultContent.textContent += '\n\n💡 此為快取結果，如需最新資訊請重新查詢';
+            }
             resultSection.style.display = 'block';
             resultSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // 隱藏結果
         function hideResult() {
             resultSection.style.display = 'none';
         }
 
-        // 顯示錯誤
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
         }
 
-        // 隱藏錯誤
-        function hideError() {
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function hideMessages() {
             errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        function updateCharCounter() {
+            const length = searchInput.value.length;
+            charCounter.textContent = `${length} / ${CONFIG.MAX_CHARS}`;
+            
+            if (length > CONFIG.MAX_CHARS * 0.9) {
+                charCounter.classList.add('warning');
+            } else {
+                charCounter.classList.remove('warning');
+            }
+            
+            if (length > CONFIG.MAX_CHARS) {
+                charCounter.classList.add('error');
+                searchInput.classList.add('error');
+            } else {
+                charCounter.classList.remove('error');
+                searchInput.classList.remove('error');
+            }
         }
 
         // 事件監聽器
@@ -367,10 +589,37 @@
             }
         });
 
+        searchInput.addEventListener('input', updateCharCounter);
+
+        searchInput.addEventListener('focus', () => {
+            searchInput.classList.remove('error');
+        });
+
         // 頁面載入完成後的初始化
         document.addEventListener('DOMContentLoaded', () => {
             searchInput.focus();
+            updateCharCounter();
+            
+            // 檢查是否需要顯示頻率限制警告
+            const searches = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+            const recentSearches = searches.filter(time => time > Date.now() - 60000);
+            if (recentSearches.length >= CONFIG.RATE_LIMIT_WARNING_THRESHOLD) {
+                rateLimitWarning.style.display = 'block';
+            }
         });
+
+        // 清理過期的搜尋記錄
+        setInterval(() => {
+            const now = Date.now();
+            const oneMinuteAgo = now - 60000;
+            const searches = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+            const validSearches = searches.filter(time => time > oneMinuteAgo);
+            localStorage.setItem('searchHistory', JSON.stringify(validSearches));
+            
+            if (validSearches.length < CONFIG.RATE_LIMIT_WARNING_THRESHOLD) {
+                rateLimitWarning.style.display = 'none';
+            }
+        }, 10000); // 每10秒清理一次
     </script>
 </body>
 </html>
