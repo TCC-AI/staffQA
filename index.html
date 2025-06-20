@@ -1,42 +1,387 @@
-/ ✅ 完整前端：支援對話記憶
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>昶青物流 客服應對系統</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【昶青物流】物流客服應對系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .search-section {
+            margin-bottom: 40px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 20px 60px 20px 20px;
+            font-size: 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 50px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .result-title {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4facfe;
+        }
+
+        .result-content {
+            line-height: 1.8;
+            color: #555;
+            font-size: 16px;
+        }
+
+        .result-content h3 {
+            color: #333;
+            margin: 20px 0 10px 0;
+        }
+
+        .result-content ul {
+            margin: 10px 0 10px 20px;
+        }
+
+        .result-content li {
+            margin: 5px 0;
+        }
+
+        .quick-questions {
+            margin-top: 40px;
+        }
+
+        .quick-questions h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .question-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .question-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 14px;
+        }
+
+        .question-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .error-message {
+            display: none;
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #d63031;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .question-tags {
+                flex-direction: column;
+            }
+
+            .question-tag {
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-  <input id="searchInput" placeholder="輸入問題...">
-  <button onclick="performSearch(document.getElementById('searchInput').value)">搜尋</button>
-  <div id="result"></div>
-  <script>
-    const CONFIG = {
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbzDApxKloey8iIX0TohMcaO4n7Rd5q_UqBpXUFLEbvp_oeUqvEoK8fivcap5VTXkZk_EQ/exec'
-    };
-    let chatHistory = [];
+    <div class="container">
+        <div class="header">
+            <h1>🚚【昶青物流】 客服應對系統</h1>
+            <p>輸入關鍵字，快速找到標準應對流程</p>
+        </div>
 
-    function performSearch(query) {
-      if (!query.trim()) return;
-      const callbackName = 'cb_' + Date.now();
-      const script = document.createElement('script');
-      const url = `${CONFIG.GAS_URL}?callback=${callbackName}&action=search&query=${encodeURIComponent(query)}&history=${encodeURIComponent(JSON.stringify(chatHistory))}`;
+        <div class="main-content">
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="請輸入客戶問題或關鍵字..." id="searchInput">
+                    <button class="search-btn" id="searchBtn">🔍</button>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在分析問題並搜尋最佳解答...</p>
+                </div>
 
-      window[callbackName] = function(response) {
-        delete window[callbackName];
-        document.head.removeChild(script);
-        if (response.success) {
-          chatHistory.push({ role: 'user', content: query });
-          chatHistory.push({ role: 'assistant', content: response.answer });
-          document.getElementById('result').innerText = response.answer;
-        } else {
-          document.getElementById('result').innerText = '錯誤：' + response.error;
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
+            <div class="result-section" id="resultSection">
+                <h2 class="result-title">📋 建議應對方式</h2>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+
+            <div class="quick-questions">
+                <h3>🔥 常見問題快速查詢</h3>
+                <div class="question-tags">
+                    <button class="question-tag" onclick="quickSearch('溫度不足')">溫度不足問題</button>
+                    <button class="question-tag" onclick="quickSearch('晚班到貨時間')">晚班到貨時間</button>
+                    <button class="question-tag" onclick="quickSearch('時間壓力配送')">緊急配送需求</button>
+                    <button class="question-tag" onclick="quickSearch('送達數量不符')">數量不符處理</button>
+                    <button class="question-tag" onclick="quickSearch('配送延遲')">配送延遲處理</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Apps Script 部署的 Web App URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXIxWRWxh7CL6rrt7poGOfDdY1vPaPpKns64ztVQmQ7bRU_nQ17LxE-7wpRGQp43dvUg/exec'; // 請替換為您的 GAS Web App URL
+
+        // DOM 元素
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('resultSection');
+        const resultContent = document.getElementById('resultContent');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 搜尋功能
+        async function performSearch(query) {
+            if (!query.trim()) {
+                showError('請輸入問題或關鍵字');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideResult();
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'search',
+                        query: query
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('網路請求失敗');
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult(data.answer);
+                } else {
+                    showError(data.error || '搜尋失敗，請稍後再試');
+                }
+            } catch (error) {
+                console.error('搜尋錯誤:', error);
+                showError('系統暫時無法使用，請稍後再試');
+            } finally {
+                showLoading(false);
+            }
         }
-      };
 
-      script.src = url;
-      document.head.appendChild(script);
-    }
-  </script>
+        // 快速搜尋
+        function quickSearch(keyword) {
+            searchInput.value = keyword;
+            performSearch(keyword);
+        }
+
+        // 顯示載入狀態
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        // 顯示結果
+        function showResult(content) {
+            resultContent.innerHTML = formatContent(content);
+            resultSection.style.display = 'block';
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 隱藏結果
+        function hideResult() {
+            resultSection.style.display = 'none';
+        }
+
+        // 顯示錯誤
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // 隱藏錯誤
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // 格式化內容
+        function formatContent(content) {
+            // 將換行符轉換為 HTML
+            let formatted = content.replace(/\n/g, '<br>');
+            
+            // 處理編號列表
+            formatted = formatted.replace(/(\d+[\.:：])/g, '<strong>$1</strong>');
+            
+            // 處理特殊符號
+            formatted = formatted.replace(/[✅❌👉📌]/g, '<span style="font-size: 1.2em;">$&</span>');
+            
+            // 處理粗體文字（用 ** 包圍的文字）
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            return formatted;
+        }
+
+        // 事件監聽器
+        searchBtn.addEventListener('click', () => {
+            performSearch(searchInput.value);
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch(searchInput.value);
+            }
+        });
+
+        // 頁面載入完成後的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            searchInput.focus();
+        });
+    </script>
 </body>
 </html>
