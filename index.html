@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>【昶青物流】AI客服應對系統(員工)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -336,6 +337,218 @@
                 font-size: 16px;
             }
         }
+/* 🆕 Markdown 內容樣式 */
+.result-content {
+    line-height: 1.8;
+    color: #555;
+    font-size: 16px;
+    /* 移除 white-space: pre-wrap; */
+}
+
+.result-content h1,
+.result-content h2,
+.result-content h3,
+.result-content h4,
+.result-content h5,
+.result-content h6 {
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.result-content h1 {
+    font-size: 1.8em;
+    border-bottom: 2px solid #4facfe;
+    padding-bottom: 8px;
+}
+
+.result-content h2 {
+    font-size: 1.5em;
+    color: #4facfe;
+}
+
+.result-content h3 {
+    font-size: 1.3em;
+    color: #667eea;
+}
+
+.result-content h4 {
+    font-size: 1.1em;
+    color: #764ba2;
+}
+
+.result-content p {
+    margin-bottom: 12px;
+    text-align: justify;
+}
+
+.result-content ul,
+.result-content ol {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.result-content li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.result-content ul li {
+    list-style-type: disc;
+}
+
+.result-content ol li {
+    list-style-type: decimal;
+}
+
+.result-content blockquote {
+    border-left: 4px solid #4facfe;
+    margin: 20px 0;
+    padding: 15px 20px;
+    background: #f8f9ff;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #666;
+}
+
+.result-content code {
+    background: #f1f3f4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #d63384;
+}
+
+.result-content pre {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.result-content pre code {
+    background: none;
+    padding: 0;
+    color: #333;
+}
+
+.result-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.result-content th,
+.result-content td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.result-content th {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.result-content tr:hover {
+    background: #f8f9fa;
+}
+
+.result-content strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.result-content em {
+    color: #667eea;
+    font-style: italic;
+}
+
+.result-content a {
+    color: #4facfe;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.result-content a:hover {
+    border-bottom-color: #4facfe;
+}
+
+.result-content hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    margin: 25px 0;
+    border-radius: 1px;
+}
+
+/* 特殊標記樣式 */
+.result-content .highlight {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.result-content .warning {
+    background: #ffe6e6;
+    border-left: 4px solid #e74c3c;
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+}
+
+.result-content .info {
+    background: #e8f4fd;
+    border-left: 4px solid #4facfe;
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+}
+
+.result-content .success {
+    background: #e8f5e8;
+    border-left: 4px solid #27ae60;
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+}
+
+/* 手機版適配 */
+@media (max-width: 768px) {
+    .result-content {
+        font-size: 15px;
+    }
+    
+    .result-content h1 {
+        font-size: 1.5em;
+    }
+    
+    .result-content h2 {
+        font-size: 1.3em;
+    }
+    
+    .result-content table {
+        font-size: 14px;
+    }
+    
+    .result-content th,
+    .result-content td {
+        padding: 8px 10px;
+    }
+}
 
     </style>
 </head>
@@ -411,7 +624,7 @@
     <script>
         // 配置設定
         const CONFIG = {
-            GAS_URL: 'https://script.google.com/macros/s/AKfycbwSSlyIvsf8HPQdkN2OTgLJODdNx6Vb_qEVkNA-pnST8_yMnf7yuYv8w76em8OW4ePj/exec',
+            GAS_URL: 'https://script.google.com/macros/s/AKfycbyC45AqJPGw5Vj6cGCn9H7yMs9w4VQ6l8bw3IS8fKYCNCNNoI6341K5o81C_lwj8dR-/exec',
             MAX_CHARS: 200,
             SEARCH_TIMEOUT: 20000, // 20秒
             RATE_LIMIT_WARNING_THRESHOLD: 8 // 達到8次時顯示警告
@@ -584,14 +797,65 @@
             loading.style.display = show ? 'block' : 'none';
         }
 
-        function showResult(content, cached = false) {
-            resultContent.textContent = content;
-            if (cached) {
-                resultContent.textContent += '\n\n💡 此為快取結果，如需最新資訊請重新查詢';
-            }
-            resultSection.style.display = 'block';
-            resultSection.scrollIntoView({ behavior: 'smooth' });
-        }
+        
+// 🆕 Markdown 渲染函數
+function renderMarkdown(content) {
+    try {
+        // 設定 marked 選項
+        marked.setOptions({
+            breaks: true,        // 支援換行
+            gfm: true,          // GitHub Flavored Markdown
+            sanitize: false,    // 允許 HTML（但要小心 XSS）
+            smartLists: true,   // 智能列表
+            smartypants: true   // 智能標點符號
+        });
+        
+        // 自定義渲染器
+        const renderer = new marked.Renderer();
+        
+        // 自定義段落渲染
+        renderer.paragraph = function(text) {
+            // 處理特殊標記
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong class="highlight">$1</strong>');
+            text = text.replace(/⚠️(.*?)$/gm, '<div class="warning">⚠️$1</div>');
+            text = text.replace(/💡(.*?)$/gm, '<div class="info">💡$1</div>');
+            text = text.replace(/✅(.*?)$/gm, '<div class="success">✅$1</div>');
+            
+            return '<p>' + text + '</p>';
+        };
+        
+        // 自定義列表項目渲染
+        renderer.listitem = function(text) {
+            return '<li>' + text + '</li>\n';
+        };
+        
+        // 渲染 Markdown
+        return marked(content, { renderer: renderer });
+        
+    } catch (error) {
+        console.error('Markdown 渲染錯誤:', error);
+        // 如果渲染失敗，回退到純文字
+        return content.replace(/\n/g, '<br>');
+    }
+}
+
+// 🔄 修改 showResult 函數
+function showResult(content, cached = false) {
+    // 渲染 Markdown 內容
+    const renderedContent = renderMarkdown(content);
+    
+    // 使用 innerHTML 而不是 textContent
+    resultContent.innerHTML = renderedContent;
+    
+    if (cached) {
+        const cacheNotice = '<div class="info">💡 此為快取結果，如需最新資訊請重新查詢</div>';
+        resultContent.innerHTML += cacheNotice;
+    }
+    
+    resultSection.style.display = 'block';
+    resultSection.scrollIntoView({ behavior: 'smooth' });
+}
+
 
         function hideResult() {
             resultSection.style.display = 'none';
